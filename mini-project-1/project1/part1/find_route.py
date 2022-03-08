@@ -66,6 +66,7 @@ def binary_search(fringe, city_node):
 # function that adds a node to the fringe
 def add_to_fringe(city_node, fringe):
     if len(fringe) > 0:
+        # find the correct index to place in sorted list
         index = binary_search(fringe, city_node)
         if(fringe[index].cost > city_node.cost):
             fringe.insert(index+1, city_node)
@@ -88,25 +89,33 @@ def expand_node(popped, fringe, closed, map, nodes_generated, heuristic):
                         if fringe[i].city == city[0] and fringe[i].cost > city[1]+heuristic[city[0]]:
                             index = i
                     else:
-                        if fringe[i].city == city[0] and fringe[i].cost > city[1]:
+                        if fringe[i].city == city[0] and fringe[i].cost > city[1]+popped.cost:
                             index = i
                     i -= 1
 
                 if index:
+                    fringe[index].parent = popped
                     if heuristic:
                         fringe[index].cost = city[1]+heuristic[city[0]]
                     else:
-                        fringe[index].cost = city[1]
+                        fringe[index].cost = city[1]+popped.cost
+
+                    # remove from fringe and place it back in the fringe sorted
+                    tmp = fringe[index]
+                    del fringe[index]
+                    add_to_fringe(tmp, fringe)
             else:
                 nodes_generated += 1
                 if heuristic:
                     new_node = create_node(city=city[0], distance=city[1], cost=city[1]+heuristic[city[0]])  
                 else:
-                    new_node = create_node(city=city[0], distance=city[1], cost=city[1])
+                    new_node = create_node(city=city[0], distance=city[1], cost=city[1]+popped.cost)
 
                 closed[city[0]] = city[0]
 
                 new_node.parent = popped
+
+                # place in the correct spot in the fringe 
                 add_to_fringe(new_node, fringe)
     return nodes_generated
 
@@ -124,7 +133,9 @@ def ucs_search(start, goal, map, heuristic):
     while(True):
         if(len(fringe) == 0):
             return None, nodes_expanded, nodes_generated
-        
+
+        # can just pop as the list is sorted due to correct placement.
+        # so no need to search for lowest cost node.
         popped = fringe.pop()
 
         nodes_expanded += 1
@@ -162,7 +173,6 @@ def print_info(tail, nodes_expanded, nodes_generated):
         print("route: ")
         print("none")
 
-
 if __name__ == "__main__":
     if len(sys.argv) < 4:
         sys.exit(0)
@@ -180,4 +190,3 @@ if __name__ == "__main__":
     output, nodes_expanded, nodes_generated = ucs_search(start, goal, map, heuristic)
 
     print_info(output, nodes_expanded, nodes_generated)
-
